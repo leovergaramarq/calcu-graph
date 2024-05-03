@@ -1,179 +1,214 @@
 package prog02.calculador_graficador;
 
-import math.Function;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
+import maths.Function;
 import java.util.ArrayList;
+import java.awt.*;
 import java.awt.event.*;
+import javax.swing.JTextField;
+import maths.FunctionEval;
 
 public class View extends javax.swing.JFrame {
 
-    private Point origin, pressed, released;
-    private float scale;
-    private int pixelDistance;
-    private final int PANEL_WIDTH, PANEL_HEIGHT;
+    private static final byte INITIAL_SCALE = 1;
+    private static final double MIN_SCALE = 0.125;
+    private static final byte MAX_SCALE = 10;
+
+    private Point origin;
+    private Point pressed;
+    private Point released;
+    private double scale;
+    private final int pixelDistance;
+    private final int panelGraphWidth;
+    private final int panelGraphHeight;
     private ArrayList<GraphElement> graphElems;
 
     public View() {
-        this(1, 50);
+        this(INITIAL_SCALE, 50);
     }
 
-    public View(float scale, int pixelDistance) {
+    public View(double scale, int pixelDistance) {
         initComponents();
-        this.scale = scale;
+        this.fieldFunction1.setText("1/x");
+        this.scale = getBoundedScale(scale);
         this.pixelDistance = pixelDistance;
-        PANEL_WIDTH = (int) panelGraph.getSize().getWidth();
-        PANEL_HEIGHT = (int) panelGraph.getSize().getHeight();
-        origin = new Point(PANEL_WIDTH / 2, PANEL_HEIGHT / 2);
+        this.panelGraphWidth = (int) panelGraph.getSize().getWidth();
+        this.panelGraphHeight = (int) panelGraph.getSize().getHeight();
+        this.origin = new Point(panelGraphWidth / 2, panelGraphHeight / 2);
 
-        initGraph();
-        initPairs();
+        initPanelGraph();
+        initGraphElems();
 
-        panelGraph.setPreferredSize(new java.awt.Dimension(PANEL_WIDTH, PANEL_HEIGHT));
-        setResizable(false);
+//        this.panelGraph.setPreferredSize(new Dimension(this.panelWidth, this.panelHeight));
+//        setResizable(false);
     }
 
-    private void setScale(float plus, boolean add, boolean repaint) {
-        if (scale * plus != 0) {
-            scale *= plus;
+    private void setScale(boolean increase, boolean add) {
+        double newScale;
+        if (add) {
+            newScale = this.scale + (increase ? 1 : -1);
+        } else {
+            newScale = this.scale * (increase ? 1.5 : 1 / 1.5);
         }
-        /*
-        if(scale+plus<=0) return;
-        scale=(add?scale:0)+plus;
-        //*/
-        System.out.println("scale: " + scale);
-        if (repaint) {
-            panelGraph.repaint();
-        }
+        
+        this.scale = getBoundedScale(newScale);
     }
-
-    private void setOrigin(Point p, boolean add, boolean repaint) {
-        //System.out.println("old:("+origin.x+", "+origin.y+")");
-        origin.setLocation(add ? new Point(origin.x + p.x, origin.y + p.y) : p);
-        //System.out.println("new:("+origin.x+", "+origin.y+")");
-        if (repaint) {
-            panelGraph.repaint();
+    
+    private double getBoundedScale(double scale) {
+        if (scale < MIN_SCALE) {
+            return MIN_SCALE;
         }
-        //System.out.println("");
+        if (scale > MAX_SCALE) {
+            return MAX_SCALE;
+        }
+        if (scale == 0) {
+            return INITIAL_SCALE;
+        }
+        
+        return scale;
     }
 
     private void setOrigin(boolean add, boolean repaint) {
-        Point p = new Point(released.x - pressed.x, released.y - pressed.y);
-        origin.setLocation(add ? new Point(origin.x + p.x, origin.y + p.y) : p);
+        Point p = new Point(this.released.x - this.pressed.x, this.released.y - this.pressed.y);
+        this.origin.setLocation(add ? new Point(this.origin.x + p.x, this.origin.y + p.y) : p);
         if (repaint) {
-            panelGraph.repaint();
+            this.panelGraph.repaint();
         }
-        released = pressed = null;
+        this.released = null;
+        this.pressed = null;
     }
 
-    private void initGraph() {
-        panelGraph.addMouseWheelListener(new MouseAdapter() {
+    private void initPanelGraph() {
+        View that = this;
+        this.panelGraph.addMouseWheelListener(new MouseAdapter() {
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
-                setScale(e.getWheelRotation() < 0 ? 2 : (float) 0.5, true, true);
+                setScale(e.getWheelRotation() < 0, false);
             }
         });
-        panelGraph.addMouseListener(new MouseAdapter() {
+        this.panelGraph.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                pressed = e.getPoint();
+                that.pressed = e.getPoint();
                 //System.out.println("pressed on ("+e.getPoint().x+", "+e.getPoint().y+")");
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                released = e.getPoint();
-                setOrigin(true, true);
+                that.released = e.getPoint();
+                if (that.pressed != that.released) {
+                    setOrigin(true, true);
+                }
                 //System.out.println("released on ("+e.getPoint().x+", "+e.getPoint().y+")");
             }
         });
     }
 
-    private void initPairs() {
-        graphElems = new ArrayList();
-        graphElems.add(new GraphElement(fieldF, Color.YELLOW));
-        //...
+    private void initGraphElems() {
+        GraphElement graphElem = new GraphElement(this.fieldFunction1, Color.GREEN);
+        this.graphElems = new ArrayList();
+        this.graphElems.add(graphElem);
+        JTextField field = graphElem.getField();
 
-        for (GraphElement p : graphElems) {
-            p.field.addKeyListener(new KeyAdapter() {
-                @Override
-                public void keyPressed(KeyEvent e) {
-                    switch (e.getKeyCode()) {
-                        case KeyEvent.VK_ENTER:
-                            p.function = new Function(p.field.getText());
-                    }
+        field.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_ENTER:
+                        graphElem.setFunction(new Function(field.getText()));
+//                        updateGraphs();
                 }
-            });
-        }
+            }
+        });
     }
 
-    private void updatePanel(Graphics g) {
+    private void updatePanelGraph(Graphics g) {
         //final int factorX=100, factorY=100, sizeFont=20;
-        final int sizeFont = 20;
-
-        updateAxis(g, Color.WHITE);
-        //updateGraphs(g);
-        panelGraph.repaint();
+//        final int sizeFont = 20;
+        updateAxis(g);
+        updateGraphs(g);
+        this.panelGraph.repaint();
     }
 
-    private void updateAxis(Graphics g, Color color) {
-        int sizeFont = 10 + (int) (10 * Math.sqrt(scale));
+    private void updateAxis(Graphics g) {
+//        int fontSize = 10 + (int) (10 * Math.sqrt(scale));
+        int fontSize = 20;
 
         Graphics2D g2 = (Graphics2D) g;
-        g2.setStroke(new java.awt.BasicStroke(2));
-        g2.setFont(new java.awt.Font("Candara", java.awt.Font.PLAIN, sizeFont));
-        g2.setColor(color);
+        g2.setStroke(new BasicStroke(2));
+        g2.setFont(new Font("Candara", Font.PLAIN, fontSize));
+        g2.setColor(Color.WHITE);
 
-        g.drawLine(origin.x, 0, origin.x, PANEL_HEIGHT);
-        g.drawLine(0, origin.y, PANEL_WIDTH, origin.y);
+        g.drawLine(this.origin.x, 0, this.origin.x, this.panelGraphHeight);
+        g.drawLine(0, this.origin.y, this.panelGraphWidth, this.origin.y);
         //System.out.println("from "+(-origin.x/pixelDistance/scale)+" to "+ ((PANEL_WIDTH-origin.x)/pixelDistance/scale));
-        if (scale >= 1) {
-            for (int i = -origin.x / pixelDistance / (int) scale; i <= (PANEL_WIDTH - origin.x) / pixelDistance / scale; i += 1 / scale) {
-                g.drawString(String.valueOf(i), (int) (origin.x + i * pixelDistance * scale), origin.y + sizeFont);
-            }
 
-            for (int i = -origin.y / pixelDistance / (int) scale; i <= (PANEL_HEIGHT - origin.y) / pixelDistance / scale; i += 1 / scale) {
-                if (i != 0) {
-                    g.drawString(String.valueOf(-i), origin.x, (int) (origin.y + i * pixelDistance * scale));
-                }
+        for (double i = -this.origin.x / this.pixelDistance / this.scale; i <= (this.panelGraphWidth - this.origin.x) / this.pixelDistance / this.scale; i += 1 / this.scale) {
+            String coord;
+            if (i % 1 == 0) {
+                coord = String.valueOf((int) i);
+            } else {
+                coord = String.valueOf(Math.round(i * 100.0) / 100.0);
             }
-        } else {
-            for (float i = -origin.x / pixelDistance / scale; i <= (PANEL_WIDTH - origin.x) / pixelDistance / scale; i += 1 / scale) {
-                g.drawString(String.valueOf(i), origin.x + (int) i * pixelDistance, origin.y + sizeFont);
-            }
-
-            for (float i = -origin.y / pixelDistance / scale; i <= (PANEL_HEIGHT - origin.y) / pixelDistance / scale; i += 1 / scale) {
-                if (i != 0) {
-                    g.drawString(String.valueOf(-i), origin.x, origin.y + (int) i * pixelDistance);
-                }
-            }
+            g.drawString(coord, (int) (this.origin.x + i * this.pixelDistance * this.scale), this.origin.y + fontSize);
         }
 
+//        for (double i = this.origin.y / this.pixelDistance / this.scale; i >= -(this.panelHeight - this.origin.y) / this.pixelDistance / this.scale; i -= 1 / this.scale) {
+//            System.out.print(i + " ");
+//        }
+//        System.out.println("");
+        for (double i = this.origin.y / this.pixelDistance / this.scale; i >= -(this.panelGraphHeight - this.origin.y) / this.pixelDistance / this.scale; i -= 1 / this.scale) {
+            if (i != 0.0) {
+                String coord;
+                if (i % 1 == 0) {
+                    coord = String.valueOf((int) i);
+                } else {
+                    coord = String.valueOf(Math.round(i * 100.0) / 100.0);
+                }
+                g.drawString(coord, this.origin.x, (int) (this.origin.y - i * this.pixelDistance * this.scale));
+            }
+        }
     }
 
-    private void updateGraphs(Graphics g) {
-        final int stroke = 2, ox = PANEL_WIDTH / 2, oy = PANEL_HEIGHT / 2;
+    private void updateGraphs(final Graphics g) {
+        final int stroke = 2;
+        final int step = 10; // 10 drawn points for each unit
 
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setStroke(new java.awt.BasicStroke(stroke));
+        final Graphics2D g2 = (Graphics2D) g;
+        g2.setStroke(new BasicStroke(stroke));
 
-        final int fromTo = PANEL_WIDTH / 2 / factorX;
+        for (GraphElement graphElem : this.graphElems) {
+            g2.setColor(graphElem.getColor());
+            Function f = graphElem.getFunction();
 
-        for (GraphElement p : graphElems) {
-            Function f = p.function;
-            g2.setColor(p.color);
+            if (f.isValid()) {
+//                for (double x = -this.origin.x / this.pixelDistance / this.scale; x <= (this.panelWidth - this.origin.x) / this.pixelDistance / this.scale; x += 1 / this.scale / step) {
+//                    System.out.print("x: " + x + ", ");
+//                }
+//                System.out.println("");
 
-            if (f != null) {
-                int oldX = -fromTo, oldY = (int) f.eval(oldX) * factorY;
-                oldX *= factorX;
+                boolean avoidLine = true;
 
-                for (int i = -fromTo + 1; i <= fromTo; i++) {
-                    int x = i * factorX, y = (int) f.eval(i) * factorY;
-                    g2.drawLine(ox + oldX, oy - oldY, ox + x, oy - y);
-                    oldX = x;
-                    oldY = y;
+                int oldX = 0;
+                int oldY = 0;
+
+                for (double x = -this.origin.x / this.pixelDistance / this.scale; x <= (this.panelGraphWidth - this.origin.x) / this.pixelDistance / this.scale; x += 1 / this.scale / step) {
+                    FunctionEval eval = f.eval(x);
+                    if (eval.getSuccess() == FunctionEval.SUCCESS) {
+                        double y = eval.getResult();
+                        int finalX = (int) (x * this.pixelDistance * this.scale);
+                        int finalY = (int) (y * this.pixelDistance * this.scale);
+
+                        if (avoidLine) {
+                            avoidLine = false;
+                        } else if (Math.abs(finalY - oldY) < this.panelGraphHeight) {
+                            g.drawLine(this.origin.x + oldX, this.origin.y - oldY, this.origin.x + finalX, this.origin.y - finalY);
+                        }
+
+                        oldX = finalX;
+                        oldY = finalY;
+                    } else if (eval.getSuccess() == FunctionEval.UNDEFINED) {
+                        avoidLine = true;
+                    }
                 }
             }
         }
@@ -188,14 +223,14 @@ public class View extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
         jPanel3 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        fieldF = new javax.swing.JTextField();
+        fieldFunction1 = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
+        btnGraph = new javax.swing.JButton();
         panelGraph = new javax.swing.JPanel(){
             @Override
             public void paint(java.awt.Graphics g){
                 super.paint(g);
-                updatePanel(g);
+                updatePanelGraph(g);
             }
         };
 
@@ -216,14 +251,13 @@ public class View extends javax.swing.JFrame {
         jPanel3.setBackground(new java.awt.Color(154, 123, 181));
         jPanel3.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        fieldF.setFont(new java.awt.Font("Candara", 0, 18)); // NOI18N
-        fieldF.setText("2^(6/3*5)");
-        fieldF.addActionListener(new java.awt.event.ActionListener() {
+        fieldFunction1.setFont(new java.awt.Font("Candara", 0, 18)); // NOI18N
+        fieldFunction1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                fieldFActionPerformed(evt);
+                fieldFunction1ActionPerformed(evt);
             }
         });
-        jScrollPane1.setViewportView(fieldF);
+        jScrollPane1.setViewportView(fieldFunction1);
 
         jPanel3.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, 280, 50));
 
@@ -231,15 +265,15 @@ public class View extends javax.swing.JFrame {
         jLabel2.setText("f(x)");
         jPanel3.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 20, 30, 20));
 
-        jButton1.setBackground(new java.awt.Color(133, 96, 166));
-        jButton1.setFont(new java.awt.Font("Candara", 1, 14)); // NOI18N
-        jButton1.setText("(0,0)");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        btnGraph.setBackground(new java.awt.Color(133, 96, 166));
+        btnGraph.setFont(new java.awt.Font("Candara", 1, 14)); // NOI18N
+        btnGraph.setText("(0,0)");
+        btnGraph.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                btnGraphActionPerformed(evt);
             }
         });
-        jPanel3.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 110, -1, -1));
+        jPanel3.add(btnGraph, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 110, -1, -1));
 
         jPanel1.add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 60, 300, 450));
 
@@ -261,19 +295,14 @@ public class View extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void fieldFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fieldFActionPerformed
+    private void fieldFunction1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fieldFunction1ActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_fieldFActionPerformed
+    }//GEN-LAST:event_fieldFunction1ActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        /*
-        setScale(1, false, false);
-        setOrigin(new Point(PANEL_WIDTH/2, PANEL_HEIGHT/2), false, true);
-         */
-        scale = 1;
-        origin.setLocation(PANEL_WIDTH / 2, PANEL_HEIGHT / 2);
-        panelGraph.repaint();
-    }//GEN-LAST:event_jButton1ActionPerformed
+    private void btnGraphActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGraphActionPerformed
+        this.scale = INITIAL_SCALE;
+        this.origin.setLocation(this.panelGraphWidth / 2, this.panelGraphHeight / 2);
+    }//GEN-LAST:event_btnGraphActionPerformed
 
     public static void main(String args[]) {
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -299,16 +328,14 @@ public class View extends javax.swing.JFrame {
         //</editor-fold>
         //</editor-fold>
 
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new View().setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            new View().setVisible(true);
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextField fieldF;
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton btnGraph;
+    private javax.swing.JTextField fieldFunction1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;

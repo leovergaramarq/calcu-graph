@@ -82,7 +82,7 @@ public class MyStack<T> {
         while (i <= peek) {
             toString += elems[i].elem;
             if (i < peek) {
-                toString += "\t";
+                toString += " ";
             }
             i++;
         }
