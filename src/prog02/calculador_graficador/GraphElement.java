@@ -2,17 +2,43 @@ package prog02.calculador_graficador;
 
 import java.awt.Color;
 import javax.swing.JTextField;
-import math.Function;
+import maths.Function;
 
 public class GraphElement {
 
-    Color color;
-    JTextField field;
-    Function function;
+    private Color color;
+    private JTextField field;
+    private Function function;
 
-    GraphElement(JTextField field, Color color, String fnExpr) {
+    GraphElement(JTextField field, Color color) {
         this.color = color;
         this.field = field;
-        this.function = new Function(fnExpr);
+        this.function = new Function(field.getText());
     }
+    
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public void setField(JTextField field) {
+        this.field = field;
+    }
+
+    public void setFunction(Function function) {
+        this.function = function;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public JTextField getField() {
+        return field;
+    }
+
+    public Function getFunction() {
+        return function;
+    }
+    
+    
 }
