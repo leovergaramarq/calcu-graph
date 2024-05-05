@@ -74,7 +74,6 @@ public final class Function {
 
     @SuppressWarnings("empty-statement")
     public FunctionEval eval(double x) {
-//        TODO: handle undefined operations
         int i = 0;
         int n = this.postfix.length();
         MyStack<Double> stack = new MyStack(n);

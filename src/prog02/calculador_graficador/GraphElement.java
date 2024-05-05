@@ -1,27 +1,34 @@
 package prog02.calculador_graficador;
 
 import java.awt.Color;
-import javax.swing.JTextField;
 import maths.Function;
+import javax.swing.JTextField;
+import javax.swing.JScrollPane;
+import javax.swing.JPanel;
 
 public class GraphElement {
 
     private Color color;
-    private JTextField field;
+    private JTextField textField;
     private Function function;
+    private JScrollPane scrollPane;
+    private JPanel panel;
 
-    GraphElement(JTextField field, Color color) {
+    GraphElement(JTextField textField, Color color, JScrollPane scrollPane, JPanel panel) {
         this.color = color;
-        this.field = field;
-        this.function = new Function(field.getText());
+        this.textField = textField;
+        this.function = new Function(textField.getText());
+        this.scrollPane = scrollPane;
+        this.panel = panel;
     }
     
     public void setColor(Color color) {
         this.color = color;
     }
 
-    public void setField(JTextField field) {
-        this.field = field;
+    public void setTextField(JTextField textField) {
+        this.textField = textField;
+        this.function = new Function(this.textField.getText());
     }
 
     public void setFunction(Function function) {
@@ -32,13 +39,19 @@ public class GraphElement {
         return color;
     }
 
-    public JTextField getField() {
-        return field;
+    public JTextField getTextField() {
+        return textField;
     }
 
     public Function getFunction() {
         return function;
     }
-    
-    
+
+    public JScrollPane getScrollPane() {
+        return scrollPane;
+    }
+
+    public JPanel getPanel() {
+        return panel;
+    }
 }
