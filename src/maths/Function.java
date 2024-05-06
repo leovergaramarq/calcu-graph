@@ -8,6 +8,7 @@ public final class Function {
 
     private String expression;
     private String postfix;
+    private MyStack<String> postfixStack;
     private boolean valid;
 
     public Function(String expression) {
@@ -19,19 +20,17 @@ public final class Function {
     }
 
     @SuppressWarnings("empty-statement")
-    private static String calcPostfix(String expression) {
-        //2^(6/3*5)
-
+    private void calcPostfix(String expression) {
         int n = expression.length();
         MyStack<String> wait = new MyStack(n);
-        MyStack<String> stack = new MyStack(n);
+        this.postfixStack = new MyStack(n);
         int i = 0;
 
         while (i < n) {
             String s = expression.substring(i, i + 1);
 
             if (s.equals(X_VAR)) {
-                stack.push(s);
+                this.postfixStack.push(s);
             } else if (isDigit(s) || s.equals(OperatorToken.POINT)) {
                 int j = i - 1;
                 String s2 = "";
@@ -40,21 +39,21 @@ public final class Function {
                         && (isDigit(s2 = expression.substring(j, j + 1)))
                         || (s2.equals(OperatorToken.POINT)));
 
-                stack.push(expression.substring(i, j));
+                this.postfixStack.push(expression.substring(i, j));
                 i = j - 1;
             } else if (!s.equals(" ")) {
                 String s2;
 
                 if (s.equals(OperatorToken.PARENTHESIS_CLOSE)) {
                     while ((s2 = wait.pop()) != null && !s2.equals(OperatorToken.PARENTHESIS_OPEN)) {
-                        stack.push(s2);
+                        this.postfixStack.push(s2);
                     }
                 } else {
                     Operator o1 = new Operator(s);
 
                     while ((s2 = wait.peek()) != null
                             && !s2.equals(OperatorToken.PARENTHESIS_OPEN) && (new Operator(s2)).compareTo(o1) >= 0) {
-                        stack.push(wait.pop());
+                        this.postfixStack.push(wait.pop());
                     }
 
                     wait.push(s);
@@ -65,39 +64,28 @@ public final class Function {
 
         String s;
         while ((s = wait.pop()) != null) {
-            stack.push(s);
+            this.postfixStack.push(s);
         }
-//        TODO: save postfix stack
 
-        return stack.toString();
+        this.postfix = postfixStack.toString();
     }
 
     @SuppressWarnings("empty-statement")
     public FunctionEval eval(double x) {
-        int i = 0;
-        int n = this.postfix.length();
+        int n = this.postfixStack.getPeek() + 1;
         MyStack<Double> stack = new MyStack(n);
         byte success = FunctionEval.SUCCESS;
 
         try {
-            while (i < n) {
-                String s = this.postfix.substring(i, i + 1);
-                if (isDigit(s) || s.equals(OperatorToken.POINT)) {
-                    int j = i - 1;
-                    String s2;
-
-                    while (++j < n
-                            && (isDigit(s2 = this.postfix.substring(j, j + 1))
-                            || s2.equals(OperatorToken.POINT)));
-                    stack.push(Double.valueOf(this.postfix.substring(i, j)));
-                    i = j;
+            for (int i = 0; i < n; i++) {
+                String s = this.postfixStack.get(i);
+                if (isNumber(s)) {
+                    stack.push(Double.valueOf(s));
                 } else if (s.equals(X_VAR)) {
                     stack.push(x);
                 } else if (!s.equals(" ")) {
                     double b = stack.pop();
                     double a = stack.pop();
-
-                    boolean undefined = false;
 
                     switch (s) {
                         case OperatorToken.PLUS:
@@ -111,22 +99,37 @@ public final class Function {
                             break;
                         case OperatorToken.DIVIDE:
                             if (b == 0.0) {
-                                undefined = true;
+                                success = FunctionEval.UNDEFINED;
                             } else {
                                 stack.push((double) (a / b));
                             }
                             break;
                         case OperatorToken.POW:
-                            stack.push(Math.pow(a, b));
+                            double result;
+                            if (a < 0 && b > 0 && b < 1) {
+                                result = Math.pow(Math.abs(a), b);
+                                if (Math.abs(1.0 / b) % 2 == 1) {
+                                    result = -result;
+                                } else {
+                                    success = FunctionEval.IMAGINARY;
+                                }
+                            } else {
+                                result = Math.pow(a, b);
+                            }
+
+                            if (success == FunctionEval.SUCCESS) {
+                                stack.push(result);
+                            }
                             break;
+                        default:
+                            this.valid = false;
+                            success = FunctionEval.ERROR;
                     }
 
-                    if (undefined) {
-                        success = FunctionEval.UNDEFINED;
+                    if (success != FunctionEval.SUCCESS) {
                         break;
                     }
                 }
-                i++;
             }
 
         } catch (Exception e) {
@@ -149,7 +152,7 @@ public final class Function {
         int countOperators = 0;
 
         for (String token : tokens) {
-            if (token.equals(X_VAR) || token.matches("^\\d+(\\.\\d+)?$")) {
+            if (token.equals(X_VAR) || isNumber(token)) {
                 countNums++;
             } else {
                 for (String op : operators) {
@@ -160,7 +163,7 @@ public final class Function {
                 }
             }
         }
-        
+
         return countNums == countOperators + 1;
     }
 
@@ -173,6 +176,10 @@ public final class Function {
         return validatePostfixPattern(postfix) && validatePostfixTokenCount(postfix);
     }
 
+    private static boolean isNumber(String number) {
+        return number.matches("^\\d+(\\.\\d+)?$");
+    }
+
     public String getExpression() {
         return this.expression;
     }
@@ -183,7 +190,7 @@ public final class Function {
 
     public void setExpression(String expression) {
         this.expression = parseExpression(expression);
-        this.postfix = calcPostfix(this.expression);
+        calcPostfix(this.expression);
         this.valid = validatePostfix(this.postfix);
     }
 

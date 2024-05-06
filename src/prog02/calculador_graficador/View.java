@@ -355,7 +355,9 @@ public class View extends javax.swing.JFrame {
 
                 for (double x = -this.origin.x / this.pixelDistance / this.scale; x <= (this.panelGraphWidth - this.origin.x) / this.pixelDistance / this.scale; x += 1 / this.scale / step) {
                     FunctionEval eval = f.eval(x);
-                    if (eval.getSuccess() == FunctionEval.SUCCESS) {
+                    byte success = eval.getSuccess();
+                    
+                    if (success == FunctionEval.SUCCESS) {
                         double y = eval.getResult();
                         int finalX = (int) (x * this.pixelDistance * this.scale);
                         int finalY = (int) (y * this.pixelDistance * this.scale);
@@ -368,7 +370,7 @@ public class View extends javax.swing.JFrame {
 
                         oldX = finalX;
                         oldY = finalY;
-                    } else if (eval.getSuccess() == FunctionEval.UNDEFINED) {
+                    } else if (success == FunctionEval.UNDEFINED || success == FunctionEval.IMAGINARY) {
                         avoidLine = true;
                     }
                 }

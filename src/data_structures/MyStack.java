@@ -88,4 +88,15 @@ public class MyStack<T> {
         }
         return toString;
     }
+
+    public int getPeek() {
+        return this.peek;
+    }
+
+    public T get(int i) {
+        if (i < 0 || i > peek) {
+            throw new java.lang.IndexOutOfBoundsException("At MyStack.get(). Index: " + i + ", Peek=" + peek + ".");
+        }
+        return this.elems[i].elem;
+    }
 }

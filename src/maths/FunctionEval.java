@@ -2,7 +2,7 @@ package maths;
 
 
 public class FunctionEval {
-    public static final byte SUCCESS = 1, ERROR = -1, UNDEFINED = 0;
+    public static final byte SUCCESS = 1, ERROR = -1, UNDEFINED = 0, IMAGINARY = 2;
 
     final private byte success;
     final private double result;
