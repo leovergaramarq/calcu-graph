@@ -112,6 +112,21 @@ public class View extends javax.swing.JFrame {
                 //System.out.println("released on ("+e.getPoint().x+", "+e.getPoint().y+")");
             }
         });
+        
+        this.panelGraph.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                //System.out.println("DRAG");
+                //*
+                that.released = e.getPoint().getLocation();
+                
+                if (that.pressed == null || that.released == null) return;
+                if (that.pressed != that.released) {
+                    setOrigin(true, true);
+                    that.pressed = e.getPoint().getLocation();
+                }//*/
+            }
+        });
     }
 
     private GraphElement createGraphElem() {
