@@ -50,7 +50,7 @@ public class View extends javax.swing.JFrame {
         this.panelGraph.setPreferredSize(new Dimension(this.panelGraphWidth, this.panelGraphHeight));
         this.setResizable(false);
 
-        javax.swing.JOptionPane.showMessageDialog(this, "Enter an algebraic expression in terms of x and press enter to graph.\n\nRoots are not supported.\n\nExample:\n(x^2-5)/(1/2*x^3)+6", "How it works", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        javax.swing.JOptionPane.showMessageDialog(this, "Enter an algebraic expression in terms of x and press enter to graph.\n\nSupported operations: addition (+), subtraction (-), multiplication (*), division (/), exponentiation (^), roots (through exponentiation).\n\nNote: For negatives values like -x, use 0-x instead.\n\nExample:\n(x^(1/2)-5)/((0-1)/2*x^3)+0.5", "How it works", javax.swing.JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void setScale(boolean increase, boolean add) {
@@ -112,15 +112,17 @@ public class View extends javax.swing.JFrame {
                 //System.out.println("released on ("+e.getPoint().x+", "+e.getPoint().y+")");
             }
         });
-        
+
         this.panelGraph.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
                 //System.out.println("DRAG");
                 //*
                 that.released = e.getPoint().getLocation();
-                
-                if (that.pressed == null || that.released == null) return;
+
+                if (that.pressed == null || that.released == null) {
+                    return;
+                }
                 if (that.pressed != that.released) {
                     setOrigin(true, true);
                     that.pressed = e.getPoint().getLocation();
@@ -296,7 +298,6 @@ public class View extends javax.swing.JFrame {
     }
 
     private void updateAxis(Graphics g) {
-//        int fontSize = 10 + (int) (10 * Math.sqrt(scale));
         int fontSize = 20;
 
         Graphics2D g2 = (Graphics2D) g;
@@ -368,10 +369,10 @@ public class View extends javax.swing.JFrame {
                 int oldX = 0;
                 int oldY = 0;
 
-                for (double x = -this.origin.x / this.pixelDistance / this.scale; x <= (this.panelGraphWidth - this.origin.x) / this.pixelDistance / this.scale; x += 1 / this.scale / step) {
+                for (double x = (double) (-this.origin.x) / this.pixelDistance / this.scale; x <= (double) (this.panelGraphWidth - this.origin.x) / this.pixelDistance / this.scale; x += 1.0 / this.scale / step) {
                     FunctionEval eval = f.eval(x);
                     byte success = eval.getSuccess();
-                    
+
                     if (success == FunctionEval.SUCCESS) {
                         double y = eval.getResult();
                         int finalX = (int) (x * this.pixelDistance * this.scale);
