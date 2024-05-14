@@ -49,7 +49,16 @@ public final class Function {
                         this.postfixStack.push(s2);
                     }
                 } else {
+                    int j = i - 1;
+                    
+                    while (++j < n
+                        && (isLetter(expression.substring(j, j + 1))));
+                    
+                    j = j==i? j+1 : j;
+                    
+                    s = expression.substring(i, j);
                     Operator o1 = new Operator(s);
+                    i = j-1;
 
                     while ((s2 = wait.peek()) != null
                             && !s2.equals(OperatorToken.PARENTHESIS_OPEN) && (new Operator(s2)).compareTo(o1) >= 0) {
@@ -85,8 +94,8 @@ public final class Function {
                     stack.push(x);
                 } else if (!s.equals(" ")) {
                     double b = stack.pop();
-                    double a = stack.pop();
-
+                    Double a = stack.pop();
+                    
                     switch (s) {
                         case OperatorToken.PLUS:
                             stack.push(a + b);
@@ -121,6 +130,14 @@ public final class Function {
                                 stack.push(result);
                             }
                             break;
+                        case OperatorToken.ROOT:
+                            if (a!=null) stack.push(a);
+                            stack.push(Math.sqrt(b));
+                            break;
+                        case OperatorToken.ABS:
+                            if (a!=null) stack.push(a);
+                            stack.push(Math.abs(b));
+                            break;
                         default:
                             this.valid = false;
                             success = FunctionEval.ERROR;
@@ -150,6 +167,7 @@ public final class Function {
         String[] operators = {OperatorToken.PLUS, OperatorToken.MINUS, OperatorToken.TIMES, OperatorToken.DIVIDE, OperatorToken.POW};
         int countNums = 0;
         int countOperators = 0;
+        int minusCount = 0;
 
         for (String token : tokens) {
             if (token.equals(X_VAR) || isNumber(token)) {
@@ -158,6 +176,7 @@ public final class Function {
                 for (String op : operators) {
                     if (token.equals(op)) {
                         countOperators++;
+                        if (op == OperatorToken.MINUS) minusCount++;
                         break;
                     }
                 }
@@ -168,7 +187,7 @@ public final class Function {
     }
 
     private static boolean validatePostfixPattern(String postfix) {
-        return postfix.matches("^\\s*(\\s*(x|(\\d+(\\.\\d+)?)|[-+*/^])\\s)+\\s*$");
+        return postfix.matches("^\\s*(\\s*(x|(\\d+(\\.\\d+)?)|([-+*/^]|sqrt|abs))\\s)+\\s*$");
     }
 
     private static boolean validatePostfix(String postfix) {
@@ -178,6 +197,10 @@ public final class Function {
 
     private static boolean isNumber(String number) {
         return number.matches("^\\d+(\\.\\d+)?$");
+    }
+    
+    private static boolean isLetter(String letter){
+        return letter.matches("^[A-WYZa-wyz]$");
     }
 
     public String getExpression() {
