@@ -4,7 +4,7 @@ class OperatorHierarchy {
 
     static final byte PLUS = 0, MINUS = 0,
             TIMES = 1, DIVIDE = 1,
-            POW = 2, ROOT = 2,
+            POW = 2, ROOT = 2, ABS=2,
             PARENTHESIS_OPEN = 3, PARENTHESIS_CLOSE = 3,
             UNDEFINED = -1;
 }
@@ -13,7 +13,7 @@ class OperatorToken {
 
     static final String PLUS = "+", MINUS = "-",
             TIMES = "*", DIVIDE = "/",
-            POW = "^", ROOT = "",
+            POW = "^", ROOT = "sqrt", ABS="abs",
             PARENTHESIS_OPEN = "(", PARENTHESIS_CLOSE = ")",
             POINT = ".";
 }
@@ -41,6 +41,12 @@ public class Operator implements Comparable {
                 break;
             case OperatorToken.POW:
                 hierarchy = OperatorHierarchy.POW;
+                break;
+            case OperatorToken.ROOT:
+                hierarchy = OperatorHierarchy.ROOT;
+                break;
+            case OperatorToken.ABS:
+                hierarchy = OperatorHierarchy.ABS;
                 break;
             case OperatorToken.PARENTHESIS_OPEN:
                 hierarchy = OperatorHierarchy.PARENTHESIS_OPEN;
